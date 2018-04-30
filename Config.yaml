@@ -1,0 +1,129 @@
+Search:
+    URL: "https://santabarbara.craigslist.org/search/apa"
+
+SMTP:
+    host:
+    port:
+    user:
+    pass:
+
+Query:
+    #------ SEARCH OPTIONS ------#
+    
+    # Listing has photos? (0=no, 1=yes)
+    hasPic:             1
+
+
+    # Search type (T=titles only, (blank)=all)
+    srchType:           T
+
+    # Bundle together duplicate posts? (0=no, 1=yes)
+    bundleDuplicates:   1
+
+
+
+    #------ PRICE ------#
+
+    # Minimum price (dollars as integer)
+    min_price:          750
+
+    # Maximum price (dollars as integer)
+    max_price:          1500
+
+
+
+    #------ DATE ------#
+
+    # Listing posted today? (0=no, 1=yes)
+    postedToday:        0
+
+    # Open house date (all+dates=any day, 2018-05-01=May 1, 2018)
+    sale_date:          2018-05-10
+
+    # Availability (0=all dates, 1=within 30 days, 2=beyond 30 days)
+    availabilityMode:   0
+
+
+
+    #------ LOCATION ------#
+    
+    # Search distance (miles as integer)
+    search_distance:    25
+
+    # Postal code (5-digit integer)
+    postal:             93101
+
+    # Search nearby areas? (0=no, 1=yes)
+    #searchNearby:       0
+
+    # Nearby areas to search (requires searchNearby=1; comma-separated integers)
+    # 7=los angeles
+    # 208=ventura county
+    #nearbyAreas:        7,208 
+
+
+
+    #------ FEATURES ------#
+
+    # Minimum bedrooms (bedrooms as integer)
+    #min_bedrooms:       0
+
+    # Maximum bedrooms (bedrooms as integer)
+    #max_bedrooms:       1
+
+    # Minimum bathrooms (bedrooms as integer)
+    #min_bathrooms:      0
+
+    # Maximum bathrooms (bedrooms as integer)
+    #max_bathrooms:      2
+
+    # Minimum square footage (sqft as integer)
+    #minSqft:            0 
+
+    # Maximum square footage (sqft as integer)
+    #maxSqft:            5000
+
+    # Allows cats? (0=no, 1=yes)
+    pets_cat:           1
+
+    # Allows dogs? (0=no, 1=yes)
+    #pets_dog:           0
+
+    # Furnished? (0=no, 1=yes)
+    #is_furnished:       0
+
+    # Wellchair access? (0=no, 1=yes)
+    #wheelchaccess:      0
+
+    # Housing type (comma-separated integers)
+    # 1=apartment
+    # 2=condo
+    # 3=cottage/cabin
+    # 4=duplex
+    # 5=flat
+    # 6=house
+    # 7=in-law
+    # 8=loft
+    # 9=townhouse
+    # 10=manufactured
+    # 11=assisted living
+    # 12=land
+    housing_type:       1
+
+    # Laundry (comma-separated integers)
+    # 1=w/d in unit
+    # 2=w/d hookups
+    # 3=laundry in building
+    # 4=laundry on site
+    # 5=no laundry on site
+    #laundry:            #
+
+    # Parking (comma-separated integers)
+    # 1=carport
+    # 2=attached garage
+    # 3=detached garage
+    # 4=off-street parking
+    # 5=street parking
+    # 6=valet parking
+    # 7=no parking
+    #parking:            #
