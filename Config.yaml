@@ -59,7 +59,7 @@ Query:
     # Nearby areas to search (requires searchNearby=1; comma-separated integers)
     # 7=los angeles
     # 208=ventura county
-    #nearbyAreas:        7,208 
+    nearbyAreas:        [7 208]
 
 
 
