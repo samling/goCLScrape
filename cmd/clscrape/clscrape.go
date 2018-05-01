@@ -2,16 +2,17 @@ package main
 
 import (
     "fmt"
-    //"encoding/xml"
+    //"io"
     "io/ioutil"
     "log"
     "net/http"
     "net/url"
     "os"
+    //"strings"
 
     "github.com/gorilla/Schema"
     "github.com/jessevdk/go-flags"
-    //"github.com/PuerkitoBio/goquery"
+    "github.com/PuerkitoBio/goquery"
     "gopkg.in/yaml.v2"
 )
 
@@ -60,16 +61,16 @@ type Config struct {
     } `yaml:"Query"`
 }
 
+type Listings struct {
+    Listings    []Listing
+}
+
 type Listing struct {
-    Title       string `xml:"title"`
-    Description string
-    Link        string
-    Date        string
-    Image       string
+    Title       string
 }
 
 var opts struct {
-    File string `short:"i" long:"input" description:"Yaml-formatted configuration file" required:"true"`
+    File        string `short:"i" long:"input" description:"Yaml-formatted configuration file" required:"true"`
 }
 
 func main() {
@@ -84,22 +85,30 @@ func main() {
     c.getConf(configFile)
     fmt.Println(c.QueryURL)
 
-    res, err := http.Get(c.QueryURL)
-    defer res.Body.Close()
+    l := Listings{}
 
-    html, err := ioutil.ReadAll(res.Body)
-
-    if err != nil {
-        os.Exit(1)
-    }
-    if res.StatusCode != 200 {
-        log.Fatalf("Status error code: %d %s", res.StatusCode, res.Status)
-    }
-
-    xmlDecode(string(html))
+    l.getAll(c.QueryURL)
 }
 
-func xmlDecode(res string) {
+func (l *Listings) getAll(url string) {
+    res, err := http.Get(url)
+    if err != nil {
+        log.Fatal("Unable to fetch URL")
+    }
+    defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	doc.Find("p.result-info").Each(func(i int, s *goquery.Selection) {
+		title := s.Find(".result-title").Text()
+		price := s.Find(".result-meta > .result-price").Text()
+		location := s.Find(".result-meta > .result-hood").Text()
+		link, _ := s.Find("a").Attr("href")
+		fmt.Printf("%s\n%s\n%s\n%s\n", title, price, location, link)
+	})
 }
 
 func (c *Config) getConf(configFile string) *Config {

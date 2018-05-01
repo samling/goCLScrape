@@ -14,7 +14,8 @@ Query:
     #------ SEARCH OPTIONS ------#
     
     # Search result format? (rss=RSS, (blank)=html)
-    format:             rss
+    # No XML/RSS support as of May 1, 2018
+    #format:             rss
 
     # Listing has photos? (0=no, 1=yes)
     hasPic:             1
