@@ -2,15 +2,21 @@ package main
 
 import (
     "fmt"
+    //"encoding/xml"
     "io/ioutil"
     "log"
+    "net/http"
     "net/url"
+    "os"
 
     "github.com/gorilla/Schema"
+    "github.com/jessevdk/go-flags"
+    //"github.com/PuerkitoBio/goquery"
     "gopkg.in/yaml.v2"
 )
 
 type Config struct {
+    QueryURL                string
     Search struct {
         Scheme              string  `yaml:"Scheme"`
         Location            string  `yaml:"Location"`
@@ -54,16 +60,50 @@ type Config struct {
     } `yaml:"Query"`
 }
 
-func main() {
-    c := Config{}
-    c.getConf()
-
-    q := createQueryString(c)
-    fmt.Println(q)
+type Listing struct {
+    Title       string `xml:"title"`
+    Description string
+    Link        string
+    Date        string
+    Image       string
 }
 
-func (c *Config) getConf() *Config {
-    yamlFile, err := ioutil.ReadFile("Config.yaml")
+var opts struct {
+    File string `short:"i" long:"input" description:"Yaml-formatted configuration file" required:"true"`
+}
+
+func main() {
+    args := os.Args
+    args, err := flags.ParseArgs(&opts, args)
+    if err != nil {
+        return
+    }
+    configFile := opts.File
+
+    c := Config{}
+    c.getConf(configFile)
+    fmt.Println(c.QueryURL)
+
+    res, err := http.Get(c.QueryURL)
+    defer res.Body.Close()
+
+    html, err := ioutil.ReadAll(res.Body)
+
+    if err != nil {
+        os.Exit(1)
+    }
+    if res.StatusCode != 200 {
+        log.Fatalf("Status error code: %d %s", res.StatusCode, res.Status)
+    }
+
+    xmlDecode(string(html))
+}
+
+func xmlDecode(res string) {
+}
+
+func (c *Config) getConf(configFile string) *Config {
+    yamlFile, err := ioutil.ReadFile(configFile)
     if err != nil {
         log.Printf("yamlFile.Get err #%s ", err)
     }
@@ -73,10 +113,12 @@ func (c *Config) getConf() *Config {
         log.Fatalf("Unmarshal: %v", err)
     }
 
+    c.QueryURL = c.getURL()
+
     return c
 }
 
-func createQueryString(c Config) *url.URL {
+func (c *Config) getURL() string {
     u := new(url.URL)
 
     host := c.Search.Location + "." + c.Search.URL
@@ -92,5 +134,5 @@ func createQueryString(c Config) *url.URL {
 
     u.RawQuery = form.Encode()
 
-    return u
+    return u.String()
 }
