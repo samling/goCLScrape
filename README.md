@@ -6,7 +6,7 @@ Craigslist scraper written in Go
 - `go get gopkg.in/yaml.v2`
 
 ## Build
-`cd goCLScrape/ && go build src/main.go`
+`cd goCLScrape/ && go build cmd/clscrape/clscrape.go`
 
 ## Run
-`./main`
+`./clscrape`
