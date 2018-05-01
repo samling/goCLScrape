@@ -1,15 +1,21 @@
 Search:
-    URL: "https://santabarbara.craigslist.org/search/apa"
+    Scheme: "https"
+    Location: "santabarbara"
+    URL: "craigslist.org/search/apa"
+
 
 SMTP:
-    host: test
-    port: test2
-    user: test3
-    pass: 
+    host: hostname
+    port: 123
+    user: username
+    pass: password
 
 Query:
     #------ SEARCH OPTIONS ------#
     
+    # Search result format? (rss=RSS, (blank)=html)
+    format:             rss
+
     # Listing has photos? (0=no, 1=yes)
     hasPic:             1
 
@@ -38,7 +44,7 @@ Query:
     postedToday:        0
 
     # Open house date (all+dates=any day, 2018-05-01=May 1, 2018)
-    sale_date:          2018-05-10
+    sale_date:          all+dates
 
     # Availability (0=all dates, 1=within 30 days, 2=beyond 30 days)
     availabilityMode:   0
@@ -56,10 +62,12 @@ Query:
     # Search nearby areas? (0=no, 1=yes)
     #searchNearby:       0
 
-    # Nearby areas to search (requires searchNearby=1; comma-separated integers)
+    # Nearby areas to search (requires searchNearby=1; list of integers)
     # 7=los angeles
     # 208=ventura county
-    nearbyAreas:        [7 208]
+    nearbyAreas:
+        - 7
+        - 208
 
 
 
@@ -95,7 +103,7 @@ Query:
     # Wellchair access? (0=no, 1=yes)
     #wheelchaccess:      0
 
-    # Housing type (comma-separated integers)
+    # Housing type (list of integers)
     # 1=apartment
     # 2=condo
     # 3=cottage/cabin
@@ -108,9 +116,11 @@ Query:
     # 10=manufactured
     # 11=assisted living
     # 12=land
-    housing_type:       1
+    housing_type:
+        - 1
+        - 2
 
-    # Laundry (comma-separated integers)
+    # Laundry (list of integers)
     # 1=w/d in unit
     # 2=w/d hookups
     # 3=laundry in building
@@ -118,7 +128,7 @@ Query:
     # 5=no laundry on site
     #laundry:            #
 
-    # Parking (comma-separated integers)
+    # Parking (list of integers)
     # 1=carport
     # 2=attached garage
     # 3=detached garage
