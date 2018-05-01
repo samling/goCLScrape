@@ -1,1 +1,1 @@
-export GOPATH=/home/sboynton/Documents/Programming/golang/craigslist-scraper
+export GOPATH=`pwd`
