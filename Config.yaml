@@ -2,10 +2,10 @@ Search:
     URL: "https://santabarbara.craigslist.org/search/apa"
 
 SMTP:
-    host:
-    port:
-    user:
-    pass:
+    host: test
+    port: test2
+    user: test3
+    pass: 
 
 Query:
     #------ SEARCH OPTIONS ------#
