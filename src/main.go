@@ -78,8 +78,12 @@ func (c *Config) getConf() *Config {
 
 func createQueryString(c Config) *url.URL {
     u := new(url.URL)
+
     host := c.Search.Location + "." + c.Search.URL
-    fmt.Println(host)
+
+    u.Scheme = c.Search.Scheme
+    u.Path = host
+
     form := url.Values{}
 
     encoder := schema.NewEncoder()
@@ -87,9 +91,6 @@ func createQueryString(c Config) *url.URL {
     encoder.Encode(c.Query, form)
 
     u.RawQuery = form.Encode()
-    u.Scheme = c.Search.Scheme
-    u.Path = host
-
 
     return u
 }
