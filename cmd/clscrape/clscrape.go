@@ -1,6 +1,7 @@
 package main
 
 import (
+    //"encoding/json"
     "fmt"
     //"io"
     "io/ioutil"
@@ -8,7 +9,8 @@ import (
     "net/http"
     "net/url"
     "os"
-    //"strings"
+    "regexp"
+    "strings"
 
     "github.com/gorilla/Schema"
     "github.com/jessevdk/go-flags"
@@ -19,16 +21,17 @@ import (
 type Config struct {
     QueryURL                string
     Search struct {
-        Scheme              string  `yaml:"Scheme"`
-        Location            string  `yaml:"Location"`
-        URL                 string  `yaml:"URL"`
+        Scheme              string   `yaml:"Scheme"`
+        Location            string   `yaml:"Location"`
+        URL                 string   `yaml:"URL"`
+        Filter              []string `yaml:"Filter"`
     } `yaml:"Search"`
 
     SMTP struct {
-        Host                string  `yaml:"host,omitempty"`
-        Port                string  `yaml:"port,omitempty"`
-        User                string  `yaml:"user,omitempty"`
-        Pass                string  `yaml:"pass,omitempty"`
+        Host                string   `yaml:"host,omitempty"`
+        Port                string   `yaml:"port,omitempty"`
+        User                string   `yaml:"user,omitempty"`
+        Pass                string   `yaml:"pass,omitempty"`
     } `yaml:"SMTP"`
 
     Query struct {
@@ -62,11 +65,14 @@ type Config struct {
 }
 
 type Listings struct {
-    Listings    []Listing
+    Listings    []Listing   `json:"listings"`
 }
 
 type Listing struct {
-    Title       string
+    Title       string      `json:"title"`
+    Price       string      `json:"price"`
+    Location    string      `json:"location"`
+    Link        string      `json:"link"`
 }
 
 var opts struct {
@@ -83,14 +89,12 @@ func main() {
 
     c := Config{}
     c.getConf(configFile)
-    fmt.Println(c.QueryURL)
 
     l := Listings{}
-
-    l.getAll(c.QueryURL)
+    l.getAll(c.QueryURL, c.Search.Filter)
 }
 
-func (l *Listings) getAll(url string) {
+func (l *Listings) getAll(url string, filterList []string) {
     res, err := http.Get(url)
     if err != nil {
         log.Fatal("Unable to fetch URL")
@@ -103,12 +107,29 @@ func (l *Listings) getAll(url string) {
 	}
 
 	doc.Find("p.result-info").Each(func(i int, s *goquery.Selection) {
-		title := s.Find(".result-title").Text()
-		price := s.Find(".result-meta > .result-price").Text()
-		location := s.Find(".result-meta > .result-hood").Text()
-		link, _ := s.Find("a").Attr("href")
-		fmt.Printf("%s\n%s\n%s\n%s\n", title, price, location, link)
+        m := Listing{}
+
+        title := s.Find(".result-title").Text()
+        price := s.Find(".result-meta > .result-price").Text()
+        location := s.Find(".result-meta > .result-hood").Text()
+        link, _ := s.Find("a").Attr("href")
+
+        filterRegex := strings.Join(filterList, "|")
+        r := regexp.MustCompile(filterRegex)
+        matches := r.FindAllString(strings.ToUpper(location), -1)
+
+        if matches == nil {
+           m.Title = title
+           m.Price = price
+           m.Location = location
+           m.Link = link
+           fmt.Printf("\n\n%s\n%s\n%s\n%s\n\n\n", title, price, location, link)
+           l.Listings = append(l.Listings, m)
+        }
 	})
+
+    fmt.Printf("%v", l)
+
 }
 
 func (c *Config) getConf(configFile string) *Config {
@@ -121,6 +142,7 @@ func (c *Config) getConf(configFile string) *Config {
     if err != nil {
         log.Fatalf("Unmarshal: %v", err)
     }
+    fmt.Printf("%v", c.Search.Filter)
 
     c.QueryURL = c.getURL()
 

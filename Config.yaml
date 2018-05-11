@@ -2,6 +2,10 @@ Search:
     Scheme: "https"
     Location: "santabarbara"
     URL: "craigslist.org/search/apa"
+    Filter:
+        - ISLA VISTA
+        - CAMINO DEL SUR
+        - GOLETA
 
 
 SMTP:
@@ -32,17 +36,17 @@ Query:
     #------ PRICE ------#
 
     # Minimum price (dollars as integer)
-    min_price:          750
+    #min_price:          750
 
     # Maximum price (dollars as integer)
-    max_price:          1500
+    max_price:          1600
 
 
 
     #------ DATE ------#
 
     # Listing posted today? (0=no, 1=yes)
-    postedToday:        0
+    postedToday:        1
 
     # Open house date (all+dates=any day, 2018-05-01=May 1, 2018)
     sale_date:          all+dates
@@ -55,20 +59,20 @@ Query:
     #------ LOCATION ------#
     
     # Search distance (miles as integer)
-    search_distance:    25
+    search_distance:    10
 
     # Postal code (5-digit integer)
     postal:             93101
 
     # Search nearby areas? (0=no, 1=yes)
-    #searchNearby:       0
+    searchNearby:       0
 
     # Nearby areas to search (requires searchNearby=1; list of integers)
     # 7=los angeles
     # 208=ventura county
-    nearbyAreas:
-        - 7
-        - 208
+    #nearbyAreas:
+    #    - 7
+    #    - 208
 
 
 
@@ -93,7 +97,7 @@ Query:
     #maxSqft:            5000
 
     # Allows cats? (0=no, 1=yes)
-    pets_cat:           1
+    #pets_cat:           1
 
     # Allows dogs? (0=no, 1=yes)
     #pets_dog:           0
@@ -119,7 +123,6 @@ Query:
     # 12=land
     housing_type:
         - 1
-        - 2
 
     # Laundry (list of integers)
     # 1=w/d in unit
