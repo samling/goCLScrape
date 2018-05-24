@@ -11,9 +11,9 @@ Search:
 
 
 SMTP:
-    host: hostname
-    port: 123
-    user: username
+    host: smtp-relay.gmail.com
+    port: 465
+    user: example@gmail.com
     pass: password
 
 Query:

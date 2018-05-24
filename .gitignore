@@ -2,3 +2,5 @@ src
 pkg
 *.tmp
 *.swp
+Config.yaml
+!*.template

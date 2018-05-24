@@ -1,12 +1,15 @@
 package main
 
 import (
-    //"encoding/json"
+    //"bytes"
+    //"crypto/tls"
+    "encoding/json"
     "fmt"
-    //"io"
+    //"html/template"
     "io/ioutil"
     "log"
     "net/http"
+    "net/smtp"
     "net/url"
     "os"
     "regexp"
@@ -75,9 +78,18 @@ type Listing struct {
     Link        string      `json:"link"`
 }
 
+type Request struct {
+    from        string
+    to          []string
+    subject     string
+    body        string
+}
+
 var opts struct {
     File        string `short:"i" long:"input" description:"Yaml-formatted configuration file" required:"true"`
 }
+
+var auth smtp.Auth
 
 func main() {
     args := os.Args
@@ -90,11 +102,26 @@ func main() {
     c := Config{}
     c.getConf(configFile)
 
-    l := Listings{}
-    l.getAll(c.QueryURL, c.Search.Filter)
+    // Connect to gmail SMTP
+    auth = smtp.PlainAuth("", c.SMTP.Host, c.SMTP.User, c.SMTP.Pass)
+
+    // Send a request
+    r := NewRequest([]string{"samlingx@gmail.com"}, "Hello world", "Hello world")
+    fmt.Printf("%v", r)
+    ok, _ := r.SendEmail(c)
+    fmt.Println(ok)
+
+    listings := Listings{}
+    listings.getAll(c.QueryURL, c.Search.Filter)
+
+    listings_json, err := json.MarshalIndent(listings.Listings, "", "    ")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("%s\n\n", string(listings_json))
 }
 
-func (l *Listings) getAll(url string, filterList []string) {
+func (listings *Listings) getAll(url string, filterList []string) {
     res, err := http.Get(url)
     if err != nil {
         log.Fatal("Unable to fetch URL")
@@ -107,7 +134,7 @@ func (l *Listings) getAll(url string, filterList []string) {
 	}
 
 	doc.Find("p.result-info").Each(func(i int, s *goquery.Selection) {
-        m := Listing{}
+        match := Listing{}
 
         title := s.Find(".result-title").Text()
         price := s.Find(".result-meta > .result-price").Text()
@@ -117,23 +144,20 @@ func (l *Listings) getAll(url string, filterList []string) {
         filterRegex := strings.Join(filterList, "|")
         r := regexp.MustCompile(filterRegex)
         var matches []string
+        var replacer = strings.NewReplacer("(", "", ")", "")
         titleMatches := r.FindAllString(strings.ToUpper(title), -1)
         locMatches := r.FindAllString(strings.ToUpper(location), -1)
         matches = append(matches, locMatches...)
         matches = append(matches, titleMatches...)
 
         if matches == nil {
-           m.Title = title
-           m.Price = price
-           m.Location = location
-           m.Link = link
-           fmt.Printf("\n\n%s\n%s\n%s\n%s\n\n\n", title, price, location, link)
-           l.Listings = append(l.Listings, m)
+           match.Title = title
+           match.Price = price
+           match.Location = replacer.Replace(strings.TrimSpace(location))
+           match.Link = link
+           listings.Listings = append(listings.Listings, match)
         }
 	})
-
-    fmt.Printf("%v", l)
-
 }
 
 func (c *Config) getConf(configFile string) *Config {
@@ -146,7 +170,7 @@ func (c *Config) getConf(configFile string) *Config {
     if err != nil {
         log.Fatalf("Unmarshal: %v", err)
     }
-    fmt.Printf("%v", c.Search.Filter)
+    fmt.Printf("Filters: %v\n\n", c.Search.Filter)
 
     c.QueryURL = c.getURL()
 
@@ -170,4 +194,25 @@ func (c *Config) getURL() string {
     u.RawQuery = form.Encode()
 
     return u.String()
+}
+
+func NewRequest(to []string, subject string, body string) *Request {
+    return &Request{
+        to:         to,
+        subject:    subject,
+        body:       body,
+    }
+}
+
+func (r *Request) SendEmail(c Config) (bool, error) {
+    mime := "MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n"
+    subject := "Subject: " + r.subject + "!\n"
+    msg := []byte(subject + mime + "\n" + r.body)
+    addr := c.SMTP.Host + ":" + c.SMTP.Port
+
+    if err := smtp.SendMail(addr, auth, "samlingx@gmail.com", r.to, msg); err != nil {
+        fmt.Printf("SMTP Error: %s", err)
+        return false, err
+    }
+    return true, nil
 }
