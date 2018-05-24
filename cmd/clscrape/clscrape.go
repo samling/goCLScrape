@@ -1,23 +1,21 @@
 package main
 
 import (
-    //"bytes"
-    //"crypto/tls"
     "encoding/json"
     "fmt"
-    //"html/template"
     "io/ioutil"
     "log"
     "net/http"
-    "net/smtp"
     "net/url"
     "os"
     "regexp"
     "strings"
+    "time"
 
     "github.com/gorilla/Schema"
     "github.com/jessevdk/go-flags"
     "github.com/PuerkitoBio/goquery"
+    "gopkg.in/gomail.v2"
     "gopkg.in/yaml.v2"
 )
 
@@ -31,8 +29,9 @@ type Config struct {
     } `yaml:"Search"`
 
     SMTP struct {
+        Name                string   `yaml:"name,omitempty"`
         Host                string   `yaml:"host,omitempty"`
-        Port                string   `yaml:"port,omitempty"`
+        Port                int      `yaml:"port,omitempty"`
         User                string   `yaml:"user,omitempty"`
         Pass                string   `yaml:"pass,omitempty"`
     } `yaml:"SMTP"`
@@ -76,20 +75,12 @@ type Listing struct {
     Price       string      `json:"price"`
     Location    string      `json:"location"`
     Link        string      `json:"link"`
-}
-
-type Request struct {
-    from        string
-    to          []string
-    subject     string
-    body        string
+    Image       string      `json:"image"`
 }
 
 var opts struct {
     File        string `short:"i" long:"input" description:"Yaml-formatted configuration file" required:"true"`
 }
-
-var auth smtp.Auth
 
 func main() {
     args := os.Args
@@ -102,15 +93,6 @@ func main() {
     c := Config{}
     c.getConf(configFile)
 
-    // Connect to gmail SMTP
-    auth = smtp.PlainAuth("", c.SMTP.Host, c.SMTP.User, c.SMTP.Pass)
-
-    // Send a request
-    r := NewRequest([]string{"samlingx@gmail.com"}, "Hello world", "Hello world")
-    fmt.Printf("%v", r)
-    ok, _ := r.SendEmail(c)
-    fmt.Println(ok)
-
     listings := Listings{}
     listings.getAll(c.QueryURL, c.Search.Filter)
 
@@ -119,6 +101,8 @@ func main() {
         log.Fatal(err)
     }
     fmt.Printf("%s\n\n", string(listings_json))
+
+    sendResults(c, listings)
 }
 
 func (listings *Listings) getAll(url string, filterList []string) {
@@ -133,14 +117,18 @@ func (listings *Listings) getAll(url string, filterList []string) {
 		log.Fatal(err)
 	}
 
-	doc.Find("p.result-info").Each(func(i int, s *goquery.Selection) {
+	doc.Find("li.result-row").Each(func(i int, s *goquery.Selection) {
         match := Listing{}
 
-        title := s.Find(".result-title").Text()
-        price := s.Find(".result-meta > .result-price").Text()
-        location := s.Find(".result-meta > .result-hood").Text()
-        link, _ := s.Find("a").Attr("href")
+        var images string
+        var imageids []string
+        title := s.Find("p.result-info > .result-title").Text()
+        price := s.Find("p.result-info > .result-meta > .result-price").Text()
+        location := s.Find("p.result-info > .result-meta > .result-hood").Text()
+        link, _ := s.Find("p.result-info > a").Attr("href")
+        images, _ = s.Find("a.result-image").Attr("data-ids")
 
+        // Filter matches using filter list in config
         filterRegex := strings.Join(filterList, "|")
         r := regexp.MustCompile(filterRegex)
         var matches []string
@@ -150,11 +138,17 @@ func (listings *Listings) getAll(url string, filterList []string) {
         matches = append(matches, locMatches...)
         matches = append(matches, titleMatches...)
 
+        // Select image from data-ids for email preview
+        imageids = strings.Split(images, ",")
+        image := strings.Replace(imageids[0], "1:", "", -1)
+
+
         if matches == nil {
            match.Title = title
            match.Price = price
            match.Location = replacer.Replace(strings.TrimSpace(location))
            match.Link = link
+           match.Image = image
            listings.Listings = append(listings.Listings, match)
         }
 	})
@@ -196,23 +190,29 @@ func (c *Config) getURL() string {
     return u.String()
 }
 
-func NewRequest(to []string, subject string, body string) *Request {
-    return &Request{
-        to:         to,
-        subject:    subject,
-        body:       body,
+func sendResults(c Config, listings Listings) error {
+    var body string
+    body = body + "Hello " + c.SMTP.Name + ", here are your latest search results:<br>"
+    for _, message := range listings.Listings {
+        body = body + "<h3>" + "<a href='" + message.Link + "'>" + message.Title + "</a>" + " - " + message.Price + " "
+        if len(message.Location) > 0 {
+            body = body + " (" + message.Location + ") "
+        }
+        body = body + "</h3>"
+        body = body + "<img src='https://images.craigslist.org/" + message.Image + "_300x300.jpg'><br>"
     }
-}
+    body = body + "<br><br><br><a href='" + c.QueryURL + "'>Browse the results</a>"
 
-func (r *Request) SendEmail(c Config) (bool, error) {
-    mime := "MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n"
-    subject := "Subject: " + r.subject + "!\n"
-    msg := []byte(subject + mime + "\n" + r.body)
-    addr := c.SMTP.Host + ":" + c.SMTP.Port
+    mail := gomail.NewMessage()
+    mail.SetHeader("From", "samlingx@gmail.com")
+    mail.SetHeader("To", "samlingx@gmail.com")
+    mail.SetHeader("Subject", "Craigslist search results - " + time.Now().Format(time.RFC850))
+    mail.SetBody("text/html", body)
 
-    if err := smtp.SendMail(addr, auth, "samlingx@gmail.com", r.to, msg); err != nil {
-        fmt.Printf("SMTP Error: %s", err)
-        return false, err
+    d := gomail.NewDialer(c.SMTP.Host, c.SMTP.Port, c.SMTP.User, c.SMTP.Pass)
+
+    if err := d.DialAndSend(mail); err != nil {
+        return err
     }
-    return true, nil
+    return nil
 }
