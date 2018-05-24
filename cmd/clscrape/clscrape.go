@@ -116,7 +116,11 @@ func (l *Listings) getAll(url string, filterList []string) {
 
         filterRegex := strings.Join(filterList, "|")
         r := regexp.MustCompile(filterRegex)
-        matches := r.FindAllString(strings.ToUpper(location), -1)
+        var matches []string
+        titleMatches := r.FindAllString(strings.ToUpper(title), -1)
+        locMatches := r.FindAllString(strings.ToUpper(location), -1)
+        matches = append(matches, locMatches...)
+        matches = append(matches, titleMatches...)
 
         if matches == nil {
            m.Title = title
