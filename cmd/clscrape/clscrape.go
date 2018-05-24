@@ -34,6 +34,8 @@ type Config struct {
         Port                int      `yaml:"port,omitempty"`
         User                string   `yaml:"user,omitempty"`
         Pass                string   `yaml:"pass,omitempty"`
+        From                string   `yaml:"from,omitempty"`
+        To                  string   `yaml:"to,omitempty"`
     } `yaml:"SMTP"`
 
     Query struct {
@@ -72,6 +74,7 @@ type Listings struct {
 
 type Listing struct {
     Title       string      `json:"title"`
+    Date        string      `json:"date"`
     Price       string      `json:"price"`
     Location    string      `json:"location"`
     Link        string      `json:"link"`
@@ -123,6 +126,7 @@ func (listings *Listings) getAll(url string, filterList []string) {
         var images string
         var imageids []string
         title := s.Find("p.result-info > .result-title").Text()
+        date := s.Find("p.result-info > .result-date").Text()
         price := s.Find("p.result-info > .result-meta > .result-price").Text()
         location := s.Find("p.result-info > .result-meta > .result-hood").Text()
         link, _ := s.Find("p.result-info > a").Attr("href")
@@ -142,9 +146,10 @@ func (listings *Listings) getAll(url string, filterList []string) {
         imageids = strings.Split(images, ",")
         image := strings.Replace(imageids[0], "1:", "", -1)
 
-
+        // Add valid match to struct, append struct to slice of structs
         if matches == nil {
            match.Title = title
+           match.Date = date
            match.Price = price
            match.Location = replacer.Replace(strings.TrimSpace(location))
            match.Link = link
@@ -196,16 +201,16 @@ func sendResults(c Config, listings Listings) error {
     for _, message := range listings.Listings {
         body = body + "<h3>" + "<a href='" + message.Link + "'>" + message.Title + "</a>" + " - " + message.Price + " "
         if len(message.Location) > 0 {
-            body = body + " (" + message.Location + ") "
+            body = body + " | " + message.Location + " "
         }
-        body = body + "</h3>"
+        body = body + " | <i>" + message.Date + "</i></h3>"
         body = body + "<img src='https://images.craigslist.org/" + message.Image + "_300x300.jpg'><br>"
     }
     body = body + "<br><br><br><a href='" + c.QueryURL + "'>Browse the results</a>"
 
     mail := gomail.NewMessage()
-    mail.SetHeader("From", "samlingx@gmail.com")
-    mail.SetHeader("To", "samlingx@gmail.com")
+    mail.SetHeader("From", c.SMTP.From)
+    mail.SetHeader("To", c.SMTP.To)
     mail.SetHeader("Subject", "Craigslist search results - " + time.Now().Format(time.RFC850))
     mail.SetBody("text/html", body)
 
