@@ -198,13 +198,13 @@ func (c *Config) getURL() string {
 func sendResults(c Config, listings Listings) error {
     var body string
     body = body + "Hello " + c.SMTP.Name + ", here are your latest search results:<br>"
-    for _, message := range listings.Listings {
-        body = body + "<h3>" + "<a href='" + message.Link + "'>" + message.Title + "</a>" + " - " + message.Price + " "
-        if len(message.Location) > 0 {
-            body = body + " | " + message.Location + " "
+    for _, listing := range listings.Listings {
+        body = body + "<h3>" + "<a href='" + listing.Link + "'>" + listing.Title + "</a>" + " - " + listing.Price + " "
+        if len(listing.Location) > 0 {
+            body = body + " | " + listing.Location + " "
         }
-        body = body + " | <i>" + message.Date + "</i></h3>"
-        body = body + "<img src='https://images.craigslist.org/" + message.Image + "_300x300.jpg'><br>"
+        body = body + " | <i>" + listing.Date + "</i></h3>"
+        body = body + "<img src='https://images.craigslist.org/" + listing.Image + "_300x300.jpg'><br>"
     }
     body = body + "<br><br><br><a href='" + c.QueryURL + "'>Browse the results</a>"
 
